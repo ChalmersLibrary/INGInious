@@ -35,7 +35,7 @@ $# Start content
         $if remaining:
             $if allow_registration:
                 <hr/>
-            <h5 class="center-block text-center">$:_("Sign in with")</h5>
+            <h4 class="center-block text-center">$:_("Sign in with")</h4>
 
         $ authid = 0
         $for id, auth_method in auth_meths:
@@ -46,6 +46,11 @@ $# Start content
                 <a href="$get_homepath()/auth/signin/$auth_method.get_id()">
                     $:auth_method.get_imlink()
                 </a>
+		<h4>
+                  <a href="$get_homepath()/auth/signin/$auth_method.get_id()">
+		    $:auth_method.get_name()
+		  </a>
+		</h4>
             </div>
 
             $ remaining = remaining - 1
