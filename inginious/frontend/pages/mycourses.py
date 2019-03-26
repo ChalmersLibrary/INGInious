@@ -41,7 +41,8 @@ class MyCoursesPage(INGIniousAuthPage):
                 courseid = user_input["new_courseid"]
                 self.course_factory.create_course(courseid, {"name": courseid, "accessible": False})
                 success = True
-            except:
+            except Exception:
+                self.logger.exception("...")
                 success = False
 
         return self.show_page(success)

@@ -105,6 +105,8 @@ class LTILoginPage(INGIniousPage):
         if data is None:
             raise web.notfound()
 
+        self.logger.debug("Data from Canvas: %s", data);
+
         try:
             course = self.course_factory.get_course(data["task"][0])
             if data["consumer_key"] not in course.lti_keys().keys():
@@ -112,7 +114,33 @@ class LTILoginPage(INGIniousPage):
         except:
             return self.template_helper.get_renderer().lti_bind(False, "", None, "Invalid LTI data")
 
-        user_profile = self.database.users.find_one({"ltibindings." + data["task"][0] + "." + data["consumer_key"]: data["username"]})
+        # user_profile = self.database.users.find_one({"ltibindings." + data["task"][0] + "." + data["consumer_key"]: data["username"]})
+        # https://github.com/UCL-INGI/INGInious/pull/391/files
+        if course.lti_auto_bind():
+            lti_email = data['email']
+            lti_name = data['realname']
+
+            # Added check because Canvas dummy student has empty email
+            if not lti_email:
+                lti_email = "canvas.test.account@chalmers.se"
+
+            # Will be 'roljoh@chalmers.se' or 'nisse@student.chalmers.se' the logged in CID
+            # lti_custom_user_login_id = data['custom_canvas_user_login_id']
+            lti_id = lti_email[0:lti_email.find('@')]
+
+            user_profile = self.database.users.find_one({"username": lti_id})
+            if not user_profile:
+                # New user, create an account using email address
+                user_profile = {"username": lti_id,
+                                "realname": lti_name,
+                                "email": lti_email,
+                                "bindings": {data["consumer_key"]: [lti_id, {}]},
+                                "language": self.app.get_session().get("language", "en")}
+                self.database.users.insert(user_profile)
+                self.logger.info("Automatically added LTI provided user %s bound as %s:%s", user_profile["username"], data["consumer_key"], user_profile["username"]);
+        else:
+            user_profile = self.database.users.find_one({"ltibindings." + data["task"][0] + "." + data["consumer_key"]: data["username"]})
+
         if user_profile:
             self.user_manager.connect_user(user_profile["username"], user_profile["realname"], user_profile["email"], user_profile["language"])
 
@@ -175,7 +203,7 @@ class LTILaunchPage(INGIniousPage):
                 if lis_outcome_service_url is None or outcome_result_id is None:
                     self.logger.info('Error: lis_outcome_service_url and/or lis_result_sourcedid is None but lti_send_back_grade is True')
                     raise web.forbidden(_("In order to send grade back to the TC, INGInious needs the parameters lis_outcome_service_url and "
-                                          "lis_result_sourcedid in the LTI basic-launch-request. Please contact your administrator."))
+                                        "lis_outcome_result_id in the LTI basic-launch-request. Please contact your administrator."))
             else:
                 lis_outcome_service_url = None
                 outcome_result_id = None

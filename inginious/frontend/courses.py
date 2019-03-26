@@ -43,6 +43,7 @@ class WebAppCourse(Course):
             self._is_lti = self._content.get('is_lti', False)
             self._lti_keys = self._content.get('lti_keys', {})
             self._lti_send_back_grade = self._content.get('lti_send_back_grade', False)
+            self._lti_auto_bind = self._content.get('lti_auto_bind', False)
         except:
             raise Exception("Course has an invalid description: " + self.get_id())
 
@@ -60,6 +61,7 @@ class WebAppCourse(Course):
         else:
             self._lti_keys = {}
             self._lti_send_back_grade = False
+            self._lti_auto_bind = False
             
         # Caches for tag lists
         self._all_tags_cache = None
@@ -135,6 +137,11 @@ class WebAppCourse(Course):
     def lti_send_back_grade(self):
         """ True if the current course should send back grade to the LTI Tool Consumer """
         return self._is_lti and self._lti_send_back_grade
+
+    # https://github.com/UCL-INGI/INGInious/pull/391/files
+    def lti_auto_bind(self):
+        """ True if the current course should automatically bind to the LTI provided user """
+        return self._lti_auto_bind
 
     def is_user_accepted_by_access_control(self, user_info):
         """ Returns True if the user is allowed by the ACL """
