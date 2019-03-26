@@ -105,8 +105,6 @@ class LTILoginPage(INGIniousPage):
         if data is None:
             raise web.notfound()
 
-        self.logger.debug("Data from Canvas: %s", data);
-
         try:
             course = self.course_factory.get_course(data["task"][0])
             if data["consumer_key"] not in course.lti_keys().keys():
@@ -114,13 +112,11 @@ class LTILoginPage(INGIniousPage):
         except:
             return self.template_helper.get_renderer().lti_bind(False, "", None, "Invalid LTI data")
 
-        # user_profile = self.database.users.find_one({"ltibindings." + data["task"][0] + "." + data["consumer_key"]: data["username"]})
-        # https://github.com/UCL-INGI/INGInious/pull/391/files
         if course.lti_auto_bind():
             lti_email = data['email']
             lti_name = data['realname']
 
-            # Added check because Canvas dummy student has empty email
+            # Added check because Canvas dummy student has empty email, this should not be in official code!
             if not lti_email:
                 lti_email = "canvas.test.account@chalmers.se"
 
